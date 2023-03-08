@@ -7,3 +7,10 @@ a.out
 .DS_Store
 venv/
 x3f_test_files/
+/imgs/
+/.idea/
+/cmake-build-debug/
+/cmake-build-release/
+/prev/
+.cache/
+build/

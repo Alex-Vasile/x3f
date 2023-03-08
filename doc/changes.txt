@@ -1,3 +1,8 @@
+0.58: Alex Vasile
+  Removed OpenCV, Zlib and TBB dependencies
+  Removed noise reduction
+  Fixed green color cast in shadows for Merrill
+
 0.54: Erik and Roland Karlsson and Mark Roden 2015-08-14
   Fix incandenscent for Quattro
   Ignore incorrect DarkShieldBottom for DP2

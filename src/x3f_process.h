@@ -36,7 +36,6 @@ extern int x3f_get_image(x3f_t *x3f,
 			 x3f_color_encoding_t encoding,
 			 int crop,
 			 int fix_bad,
-			 int denoise,
 			 int apply_sgain,
 			 char *wb);
 

@@ -17,7 +17,6 @@
 #include "x3f_histogram.h"
 #include "x3f_print_meta.h"
 #include "x3f_dump.h"
-#include "x3f_denoise.h"
 #include "x3f_printf.h"
 
 #include <stdio.h>
@@ -47,45 +46,43 @@ static char *extension[] =
 
 static void usage(char *progname)
 {
-  fprintf(stderr,
-          "usage: %s <SWITCHES> <file1> ...\n"
-          "   -o <DIR>        Use <DIR> as output directory\n"
-          "   -v              Verbose output for debugging\n"
-          "   -q              Suppress all messages except errors\n"
-	  "ONE OFF THE FORMAT SWITCHWES\n"
-	  "   -meta           Dump metadata\n"
-          "   -jpg            Dump embedded JPEG\n"
-          "   -raw            Dump RAW area undecoded\n"
-          "   -tiff           Dump RAW/color as 3x16 bit TIFF\n"
-          "   -dng            Dump RAW as DNG LinearRaw (default)\n"
-          "   -ppm-ascii      Dump RAW/color as 3x16 bit PPM/P3 (ascii)\n"
-          "                   NOTE: 16 bit PPM/P3 is not generally supported\n"
-          "   -ppm            Dump RAW/color as 3x16 bit PPM/P6 (binary)\n"
-          "   -histogram      Dump histogram as csv file\n"
-          "   -loghist        Dump histogram as csv file, with log exposure\n"
-	  "APPROPRIATE COMBINATIONS OF MODIFIER SWITCHES\n"
-	  "   -color <COLOR>  Convert to RGB color space\n"
-	  "                   (none, sRGB, AdobeRGB, ProPhotoRGB)\n"
-	  "                   'none' means neither scaling, applying gamma\n"
-	  "                   nor converting color space.\n"
-	  "                   This switch does not affect DNG output\n"
-          "   -unprocessed    Dump RAW without any preprocessing\n"
-          "   -qtop           Dump Quattro top layer without preprocessing\n"
-          "   -no-crop        Do not crop to active area\n"
-          "   -no-denoise     Do not denoise RAW data\n"
-          "   -no-sgain       Do not apply spatial gain (color compensation)\n"
-          "   -no-fix-bad     Do not fix bad pixels\n"
-          "   -sgain          Apply spatial gain (default except for Quattro)\n"
-          "   -wb <WB>        Select white balance preset\n"
-          "   -compress       Enable ZIP compression for DNG and TIFF output\n"
-          "   -ocl            Use OpenCL\n"
-	  "\n"
-	  "STRANGE STUFF\n"
-          "   -offset <OFF>   Offset for SD14 and older\n"
-          "                   NOTE: If not given, then offset is automatic\n"
-          "   -matrixmax <M>  Max num matrix elements in metadata (def=100)\n",
-          progname);
-  exit(1);
+    fprintf(stderr,
+            "usage: %s <SWITCHES> <file1> ...\n"
+            "   -o <DIR>        Use <DIR> as output directory\n"
+            "   -v              Verbose output for debugging\n"
+            "   -q              Suppress all messages except errors\n"
+            "ONE OFF THE FORMAT SWITCHWES\n"
+            "   -meta           Dump metadata\n"
+            "   -jpg            Dump embedded JPEG\n"
+            "   -raw            Dump RAW area undecoded\n"
+            "   -tiff           Dump RAW/color as 3x16 bit TIFF\n"
+            "   -dng            Dump RAW as DNG LinearRaw (default)\n"
+            "   -ppm-ascii      Dump RAW/color as 3x16 bit PPM/P3 (ascii)\n"
+            "                   NOTE: 16 bit PPM/P3 is not generally supported\n"
+            "   -ppm            Dump RAW/color as 3x16 bit PPM/P6 (binary)\n"
+            "   -histogram      Dump histogram as csv file\n"
+            "   -loghist        Dump histogram as csv file, with log exposure\n"
+            "APPROPRIATE COMBINATIONS OF MODIFIER SWITCHES\n"
+            "   -color <COLOR>  Convert to RGB color space\n"
+            "                   (none, sRGB, AdobeRGB, ProPhotoRGB)\n"
+            "                   'none' means neither scaling, applying gamma\n"
+            "                   nor converting color space.\n"
+            "                   This switch does not affect DNG output\n"
+            "   -unprocessed    Dump RAW without any preprocessing\n"
+            "   -qtop           Dump Quattro top layer without preprocessing\n"
+            "   -no-crop        Do not crop to active area\n"
+            "   -no-sgain       Do not apply spatial gain (color compensation)\n"
+            "   -no-fix-bad     Do not fix bad pixels\n"
+            "   -sgain          Apply spatial gain (default except for Quattro)\n"
+            "   -wb <WB>        Select white balance preset\n"
+            "   -compress       Enable ZIP compression for DNG and TIFF output\n"
+            "\n"
+            "STRANGE STUFF\n"
+            "   -offset <OFF>   Offset for SD14 and older\n"
+            "                   NOTE: If not given, then offset is automatic\n"
+            "   -matrixmax <M>  Max num matrix elements in metadata (def=100)\n",
+            progname);
+    exit(1);
 }
 
 #include <sys/types.h>
@@ -174,24 +171,22 @@ static int make_paths(const char *inpath, const char *outdir,
 
 int main(int argc, char *argv[])
 {
-  int extract_jpg = 0;
-  int extract_meta; /* Always computed */
-  int extract_raw = 1;
-  int extract_unconverted_raw = 0;
-  int crop = 1;
-  int fix_bad = 1;
-  int denoise = 1;
-  int apply_sgain = -1;
-  output_file_type_t file_type = DNG;
-  x3f_color_encoding_t color_encoding = SRGB;
-  int files = 0;
-  int errors = 0;
-  int log_hist = 0;
-  char *wb = NULL;
-  int compress = 0;
-  int use_opencl = 0;
-  char *outdir = NULL;
-  x3f_return_t ret;
+    int extract_jpg = 0;
+    int extract_meta; /* Always computed */
+    int extract_raw = 1;
+    int extract_unconverted_raw = 0;
+    int crop = 1;
+    int fix_bad = 1;
+    int apply_sgain = -1;
+    output_file_type_t file_type = DNG;
+    x3f_color_encoding_t color_encoding = SRGB;
+    int files = 0;
+    int errors = 0;
+    int log_hist = 0;
+    char *wb = NULL;
+    int compress = 0;
+    char *outdir = NULL;
+    x3f_return_t ret;
 
   int i;
 
@@ -223,47 +218,42 @@ int main(int argc, char *argv[])
     else if (!strcmp(argv[i], "-loghist"))
       Z, extract_raw = 1, file_type = HISTOGRAM, log_hist = 1;
 
-    else if (!strcmp(argv[i], "-color") && (i+1)<argc) {
-      char *encoding = argv[++i];
-      if (!strcmp(encoding, "none"))
-	color_encoding = NONE;
-      else if (!strcmp(encoding, "sRGB"))
-	color_encoding = SRGB;
-      else if (!strcmp(encoding, "AdobeRGB"))
-	color_encoding = ARGB;
-      else if (!strcmp(encoding, "ProPhotoRGB"))
-	color_encoding = PPRGB;
-      else {
-	fprintf(stderr, "Unknown color encoding: %s\n", encoding);
-	usage(argv[0]);
-      }
-    }
-    else if (!strcmp(argv[i], "-o") && (i+1)<argc)
-      outdir = argv[++i];
-    else if (!strcmp(argv[i], "-v"))
-      x3f_printf_level = DEBUG;
-    else if (!strcmp(argv[i], "-q"))
-      x3f_printf_level = ERR;
-    else if (!strcmp(argv[i], "-unprocessed"))
-      color_encoding = UNPROCESSED;
-    else if (!strcmp(argv[i], "-qtop"))
-      color_encoding = QTOP;
-    else if (!strcmp(argv[i], "-no-crop"))
-      crop = 0;
-    else if (!strcmp(argv[i], "-no-fix-bad"))
-      fix_bad = 0;
-    else if (!strcmp(argv[i], "-no-denoise"))
-      denoise = 0;
-    else if (!strcmp(argv[i], "-no-sgain"))
-      apply_sgain = 0;
-    else if (!strcmp(argv[i], "-sgain"))
-      apply_sgain = 1;
-    else if ((!strcmp(argv[i], "-wb")) && (i+1)<argc)
-      wb = argv[++i];
-    else if (!strcmp(argv[i], "-compress"))
-      compress = 1;
-    else if (!strcmp(argv[i], "-ocl"))
-      use_opencl = 1;
+        else if (!strcmp(argv[i], "-color") && (i + 1) < argc) {
+            char *encoding = argv[++i];
+            if (!strcmp(encoding, "none"))
+                color_encoding = NONE;
+            else if (!strcmp(encoding, "sRGB"))
+                color_encoding = SRGB;
+            else if (!strcmp(encoding, "AdobeRGB"))
+                color_encoding = ARGB;
+            else if (!strcmp(encoding, "ProPhotoRGB"))
+                color_encoding = PPRGB;
+            else {
+                fprintf(stderr, "Unknown color encoding: %s\n", encoding);
+                usage(argv[0]);
+            }
+        } else if (!strcmp(argv[i], "-o") && (i + 1) < argc)
+            outdir = argv[++i];
+        else if (!strcmp(argv[i], "-v"))
+            x3f_printf_level = DEBUG;
+        else if (!strcmp(argv[i], "-q"))
+            x3f_printf_level = ERR;
+        else if (!strcmp(argv[i], "-unprocessed"))
+            color_encoding = UNPROCESSED;
+        else if (!strcmp(argv[i], "-qtop"))
+            color_encoding = QTOP;
+        else if (!strcmp(argv[i], "-no-crop"))
+            crop = 0;
+        else if (!strcmp(argv[i], "-no-fix-bad"))
+            fix_bad = 0;
+        else if (!strcmp(argv[i], "-no-sgain"))
+            apply_sgain = 0;
+        else if (!strcmp(argv[i], "-sgain"))
+            apply_sgain = 1;
+        else if ((!strcmp(argv[i], "-wb")) && (i + 1) < argc)
+            wb = argv[++i];
+        else if (!strcmp(argv[i], "-compress"))
+            compress = 1;
 
   /* Strange Stuff */
     else if ((!strcmp(argv[i], "-offset")) && (i+1)<argc)
@@ -275,12 +265,10 @@ int main(int argc, char *argv[])
     else
       break;			/* Here starts list of files */
 
-  if (outdir != NULL && check_dir(outdir) != 0) {
-    x3f_printf(ERR, "Could not find outdir %s\n", outdir);
-    usage(argv[0]);
-  }
-
-  x3f_set_use_opencl(use_opencl);
+    if (outdir != NULL && check_dir(outdir) != 0) {
+        x3f_printf(ERR, "Could not find outdir %s\n", outdir);
+        usage(argv[0]);
+    }
 
   extract_meta =
     file_type == META ||
@@ -400,13 +388,13 @@ int main(int argc, char *argv[])
       x3f_printf(INFO, "Dump RAW as TIFF to %s\n", outfile);
       ret_dump = x3f_dump_raw_data_as_tiff(x3f, tmpfile,
 					   color_encoding,
-					   crop, fix_bad, denoise, sgain, wb,
+					   crop, fix_bad, sgain, wb,
 					   compress);
       break;
     case DNG:
       x3f_printf(INFO, "Dump RAW as DNG to %s\n", outfile);
       ret_dump = x3f_dump_raw_data_as_dng(x3f, tmpfile,
-					  fix_bad, denoise, sgain, wb,
+					  fix_bad, sgain, wb,
 					  compress);
       break;
     case PPMP3:
@@ -414,14 +402,14 @@ int main(int argc, char *argv[])
       x3f_printf(INFO, "Dump RAW as PPM to %s\n", outfile);
       ret_dump = x3f_dump_raw_data_as_ppm(x3f, tmpfile,
 					  color_encoding,
-					  crop, fix_bad, denoise, sgain, wb,
+					  crop, fix_bad, sgain, wb,
 					  file_type == PPMP6);
       break;
     case HISTOGRAM:
       x3f_printf(INFO, "Dump RAW as CSV histogram to %s\n", outfile);
       ret_dump = x3f_dump_raw_data_as_histogram(x3f, tmpfile,
 						color_encoding,
-						crop, fix_bad, denoise, sgain, wb,
+						crop, fix_bad, sgain, wb,
 						log_hist);
       break;
     }

@@ -22,7 +22,6 @@
 #include <fcntl.h>
 #include <tiffio.h>
 #include <math.h>
-#include <string.h>
 #include <assert.h>
 
 static void vec_double_to_float(double *a, float *b, int len)
@@ -288,12 +287,11 @@ static x3f_return_t write_camera_profiles(x3f_t *x3f, char *wb,
 
 /* extern */
 x3f_return_t x3f_dump_raw_data_as_dng(x3f_t *x3f,
-				      char *outfilename,
-				      int fix_bad,
-				      int denoise,
-				      int apply_sgain,
-				      char *wb,
-				      int compress)
+              char *outfilename,
+              int fix_bad,
+              int apply_sgain,
+              char *wb,
+              int compress)
 {
   x3f_return_t ret;
   int fd = open(outfilename, O_RDWR | BINMODE | O_CREAT | O_TRUNC, 0444);
@@ -316,21 +314,21 @@ x3f_return_t x3f_dump_raw_data_as_dng(x3f_t *x3f,
     return X3F_OUTFILE_ERROR;
   }
 
-  if (wb == NULL) wb = x3f_get_wb(x3f);
-  if (!x3f_get_image(x3f, &image, &ilevels, NONE, 0,
-		     fix_bad, denoise, apply_sgain, wb) ||
-      image.channels != 3) {
-    x3f_printf(ERR, "Could not get image\n");
-    TIFFClose(f_out);
-    return X3F_ARGUMENT_ERROR;
-  }
-  if (!x3f_get_preview(x3f, &image, &ilevels, SRGB,
-		       apply_sgain, wb, 300, &preview)) {
-    x3f_printf(ERR, "Could not get preview\n");
-    TIFFClose(f_out);
-    free(image.buf);
-    return X3F_ARGUMENT_ERROR;
-  }
+    if (wb == NULL) wb = x3f_get_wb(x3f);
+    if (!x3f_get_image(x3f, &image, &ilevels, NONE, 0,
+           fix_bad, apply_sgain, wb) ||
+        image.channels != 3) {
+        x3f_printf(ERR, "Could not get image\n");
+        TIFFClose(f_out);
+        return X3F_ARGUMENT_ERROR;
+    }
+    if (!x3f_get_preview(x3f, &image, &ilevels, SRGB,
+            apply_sgain, wb, 300, &preview)) {
+        x3f_printf(ERR, "Could not get preview\n");
+        TIFFClose(f_out);
+        free(image.buf);
+        return X3F_ARGUMENT_ERROR;
+    }
 
   TIFFSetField(f_out, TIFFTAG_SUBFILETYPE, FILETYPE_REDUCEDIMAGE);
   TIFFSetField(f_out, TIFFTAG_IMAGEWIDTH, preview.columns);

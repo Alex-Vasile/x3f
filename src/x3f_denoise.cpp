@@ -7,130 +7,128 @@
  *
  */
 
-#include <iostream>
+#include <assert.h>
 #include <inttypes.h>
 
-#include <opencv2/core.hpp>
-#include <opencv2/core/ocl.hpp>
-#include <opencv2/photo.hpp>
-#include <opencv2/imgproc.hpp>
-
-#include "x3f_denoise_utils.h"
 #include "x3f_denoise.h"
 #include "x3f_io.h"
-#include "x3f_printf.h"
 
-using namespace cv;
+namespace {
 
-static void denoise_nlm(Mat& img, float h)
+static const int INTER_RESIZE_COEF_BITS = 11;
+static const int INTER_RESIZE_COEF_SCALE = 1 << INTER_RESIZE_COEF_BITS;
+
+static inline int clamp_int(int value, int low, int high)
 {
-  UMat out, sub, sub_dn, sub_res, res;
-  float h1[3] = {0.0, h, h}, h2[3] = {0.0, h/8, h/4};
-
-  x3f_printf(DEBUG, "BEGIN denoising\n");
-  fastNlMeansDenoising(img, out, std::vector<float>(h1, h1+3),
-		       3, 11, NORM_L1);
-  x3f_printf(DEBUG, "END denoising\n");
-
-  x3f_printf(DEBUG, "BEGIN V median filtering\n");
-  UMat V(out.size(), CV_16U);
-  int get_V[2] = { 2,0 }, set_V[2] = { 0,2 };
-  mixChannels(std::vector<UMat>(1, out), std::vector<UMat>(2, V), get_V, 1);
-  medianBlur(V, V, 3);
-  mixChannels(std::vector<UMat>(1, V), std::vector<UMat>(2, out), set_V, 1);
-  x3f_printf(DEBUG, "END V median filtering\n");
-
-  x3f_printf(DEBUG, "BEGIN low-frequency denoising\n");
-  resize(out, sub, Size(), 1.0/4, 1.0/4, INTER_AREA);
-  fastNlMeansDenoising(sub, sub_dn, std::vector<float>(h2, h2+3),
-		       3, 21, NORM_L1);
-  subtract(sub, sub_dn, sub_res, noArray(), CV_16S);
-  resize(sub_res, res, out.size(), 0.0, 0.0, INTER_CUBIC);
-  subtract(out, res, out, noArray(), CV_16U);
-  x3f_printf(DEBUG, "END low-frequency denoising\n");
-
-  out.copyTo(img);
+  if (value < low) return low;
+  if (value > high) return high;
+  return value;
 }
 
-void x3f_denoise(x3f_area16_t *image, x3f_denoise_type_t type)
+static void interpolate_cubic(float x, short coeffs[4])
 {
-  assert(image->channels == 3);
-  assert(type < sizeof(denoise_types)/sizeof(denoise_desc_t));
-  const denoise_desc_t *d = &denoise_types[type];
+  const float A = -0.75f;
+  float cb[4];
+  int isum;
 
-  d->BMT_to_YUV(image);
+  cb[0] = ((A*(x + 1.0f) - 5.0f*A)*(x + 1.0f) + 8.0f*A)*(x + 1.0f) - 4.0f*A;
+  cb[1] = ((A + 2.0f)*x - (A + 3.0f))*x*x + 1.0f;
+  cb[2] = ((A + 2.0f)*(1.0f - x) - (A + 3.0f))*(1.0f - x)*(1.0f - x) + 1.0f;
+  cb[3] = 1.0f - cb[0] - cb[1] - cb[2];
 
-  Mat img(image->rows, image->columns, CV_16UC3,
-	 image->data, sizeof(uint16_t)*image->row_stride);
-  denoise_nlm(img, d->h);
-
-  d->YUV_to_BMT(image);
+  coeffs[0] = (short)(cb[0] * INTER_RESIZE_COEF_SCALE);
+  coeffs[1] = (short)(cb[1] * INTER_RESIZE_COEF_SCALE);
+  coeffs[2] = (short)(cb[2] * INTER_RESIZE_COEF_SCALE);
+  isum = coeffs[0] + coeffs[1] + coeffs[2];
+  coeffs[3] = (short)(INTER_RESIZE_COEF_SCALE - isum);
 }
 
-// NOTE: active has to be a subaera of image, i.e. they have to share
+static void resize_cubic_u16c3(const x3f_area16_t *src, x3f_area16_t *dst)
+{
+  short xcoeffs[4], ycoeffs[4];
+  const int channels = 3;
+  int dx, dy, sx, sy, k, c;
+
+  assert(src->channels == channels);
+  assert(dst->channels == channels);
+
+  for (dy = 0; dy < (int)dst->rows; dy++) {
+    const float fy = ((dy + 0.5f) * (float)src->rows / (float)dst->rows) - 0.5f;
+    int64_t sum;
+
+    sy = (int)fy;
+    if ((float)sy > fy) sy--;
+    interpolate_cubic(fy - sy, ycoeffs);
+
+    for (dx = 0; dx < (int)dst->columns; dx++) {
+      const float fx = ((dx + 0.5f) * (float)src->columns / (float)dst->columns) - 0.5f;
+      int row_value[4][3];
+
+      sx = (int)fx;
+      if ((float)sx > fx) sx--;
+      interpolate_cubic(fx - sx, xcoeffs);
+
+      for (k = 0; k < 4; k++) {
+        const int src_y = clamp_int(sy + k - 1, 0, (int)src->rows - 1);
+        const uint16_t *src_row = src->data + src->row_stride * src_y;
+
+        for (c = 0; c < channels; c++) {
+          int hx = 0;
+          int xk;
+
+          for (xk = 0; xk < 4; xk++) {
+            const int src_x = clamp_int(sx + xk - 1, 0, (int)src->columns - 1);
+            hx += src_row[src_x * channels + c] * xcoeffs[xk];
+          }
+
+          row_value[k][c] = hx;
+        }
+      }
+
+      for (c = 0; c < channels; c++) {
+        uint16_t *dst_px = dst->data + dst->row_stride * dy + dx * channels + c;
+
+        sum = 0;
+        for (k = 0; k < 4; k++) sum += (int64_t)row_value[k][c] * ycoeffs[k];
+
+        sum = (sum + (1 << (INTER_RESIZE_COEF_BITS * 2 - 1))) >>
+          (INTER_RESIZE_COEF_BITS * 2);
+
+        if (sum < 0) *dst_px = 0;
+        else if (sum > UINT16_MAX) *dst_px = UINT16_MAX;
+        else *dst_px = (uint16_t)sum;
+      }
+    }
+  }
+}
+
+static inline uint16_t sat_mul4_u16(uint16_t value)
+{
+  return value > UINT16_MAX / 4 ? UINT16_MAX : (uint16_t)(value * 4);
+}
+
+}
+
+// NOTE: active has to be a subarea of image, i.e. they have to share
 //       the same data area.
 // NOTE: image, active and qtop will be destructively modified in place.
-void x3f_expand_quattro(x3f_area16_t *image, x3f_area16_t *active,
-			x3f_area16_t *qtop,
-			x3f_area16_t *expanded, x3f_area16_t *active_exp)
+void x3f_expand_quattro(x3f_area16_t *image, x3f_area16_t *qtop, x3f_area16_t *expanded)
 {
+  int row, col;
+
   assert(image->channels == 3);
   assert(qtop->channels == 1);
-  assert(X3F_DENOISE_F23 < sizeof(denoise_types)/sizeof(denoise_desc_t));
-  const denoise_desc_t *d = &denoise_types[X3F_DENOISE_F23];
+  assert(qtop->rows == expanded->rows);
+  assert(qtop->columns == expanded->columns);
+  assert(expanded->channels == 3);
 
-  d->BMT_to_YUV(image);
+  resize_cubic_u16c3(image, expanded);
 
-  Mat img(image->rows, image->columns, CV_16UC3,
-	  image->data, sizeof(uint16_t)*image->row_stride);
-  Mat qt(qtop->rows, qtop->columns, CV_16U,
-	 qtop->data, sizeof(uint16_t)*qtop->row_stride);
-  Mat exp(expanded->rows, expanded->columns, CV_16UC3,
-	  expanded->data, sizeof(uint16_t)*expanded->row_stride);
+  for (row = 0; row < (int)qtop->rows; row++) {
+    const uint16_t *src_row = qtop->data + qtop->row_stride * row;
+    uint16_t *dst_row = expanded->data + expanded->row_stride * row;
 
-  assert(qt.size() == exp.size());
-
-  if (active) {
-    assert(active->channels == 3);
-    Mat act(active->rows, active->columns, CV_16UC3,
-	    active->data, sizeof(uint16_t)*active->row_stride);
-    denoise_nlm(act, d->h);
+    for (col = 0; col < (int)qtop->columns; col++)
+      dst_row[expanded->channels * col] = sat_mul4_u16(src_row[col]);
   }
-
-  resize(img, exp, exp.size(), 0.0, 0.0, INTER_CUBIC);
-  qt *= 4;
-  int from_to[] = { 0,0 };
-  mixChannels(&qt, 1, &exp, 1, from_to, 1);
-
-  if (active_exp) {
-    assert(active_exp->channels == 3);
-    Mat act_exp(active_exp->rows, active_exp->columns, CV_16UC3,
-		active_exp->data, sizeof(uint16_t)*active_exp->row_stride);
-    UMat out;
-    float h[3] = {0.0, d->h, d->h*2};
-
-    x3f_printf(DEBUG, "BEGIN Quattro full-resolution denoising\n");
-    fastNlMeansDenoising(act_exp, out, std::vector<float>(h, h+3),
-			 3, 11, NORM_L1);
-    x3f_printf(DEBUG, "END Quattro full-resolution denoising\n");
-
-    out.copyTo(act_exp);
-  }
-
-  d->YUV_to_BMT(expanded);
-}
-
-void x3f_set_use_opencl(int flag)
-{
-  ocl::setUseOpenCL(flag);
-
-  if (flag) {
-    if (ocl::useOpenCL()) {
-      ocl::Device dev = ocl::Device::getDefault();
-      x3f_printf(INFO, "OpenCL device name: %s\n", dev.name().c_str());
-      x3f_printf(INFO, "OpenCL device version: %s\n", dev.version().c_str());
-    }
-    else x3f_printf(WARN, "OpenCL is not available\n");
-  }
-  else x3f_printf(DEBUG, "OpenCL is disabled\n");
 }

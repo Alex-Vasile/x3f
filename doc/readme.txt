@@ -59,7 +59,7 @@ Here are some examples:
 
 (1) x3f_extract file.x3f
     This one creates the file file.dng for usage in e.g. Lightroom
-    or Photoshop (via ACR). The file contains denoised but unconverted
+    or Photoshop (via ACR). The file contains unconverted
     RAW data plus color conversion info.
 
 (2) x3f_extract -tiff [-color AdobeRGB] file.x3f
