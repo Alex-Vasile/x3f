@@ -1,0 +1,39 @@
+name: Build and package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Dependencies
+      run: |
+        brew install cmake libtiff
+        cmake --version
+
+    - name: Configure and Build
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        make -j 2
+
+    - name: Compress
+      run: |
+        mkdir x3f_tools
+        cp -r build/bin x3f_tools
+        cp -r doc x3f_tools
+        tar -czvf x3f_tools.tar.gz x3f_tools
+
+
+    - name: Upload Artifacts
+      if: success()
+      uses: actions/upload-artifact@v2
+      with:
+        name: x3f_tools
+        path: x3f_tools.tar.gz
