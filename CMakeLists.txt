@@ -3,29 +3,25 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.4)
 #set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
 
 Project (x3f)
-set(EXECUTABLE_NAME "x3f_extract")
-
 add_definitions(-DVERSION=\"0.57\")
-set(CMAKE_VERBOSE_MAKEFILE ON)
-
+include(FindPkgConfig)
+set(EXECUTABLE_NAME "x3f_extract")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+#set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(FRAMEWORKS_DIRECTOR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${EXECUTABLE_NAME}.app/Contents/Frameworks)
+list(APPEND CMAKE_MODULE_PATH ${ZSTD_DIR})
 
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
-link_directories(${OpenCV_LIBRARY_DIRS})
-
-find_package(ZLIB REQUIRED)
-include_directories(${ZLIB_INCLUDE_DIRS})
-link_directories(${ZLIB_LIBRARY_DIRS})
-
-find_package(TIFF REQUIRED)
-include_directories(${TIFF_INCLUDE_DIRS})
-link_directories(${TIFF_LIBRARY_DIRS})
-
+find_package(ZSTD REQUIRED)
 find_package(Iconv REQUIRED)
-include_directories(${ICONV_INCLUDE_DIRS})
-link_directories(${ICONV_LIBRARY_DIRS})
+#find_library(ICONV_STATIC_LIBRARY           NAMES libiconv.a          libiconv.lib PATHS /opt/homebrew/opt/libiconv/lib)
+find_library(LZMA_STATIC_LIBRARY            NAMES liblzma.a           liblzma.lib)
+find_library(JPEG_STATIC_LIBRARY            NAMES libjpeg.a           libjpeg.lib)
+find_library(TIFF_STATIC_LIBRARY            NAMES libtiff.a           libtiff.lib)
+find_package(OpenCV REQUIRED)
+find_library(OPENCV_CORE_STATIC_LIBRARY     NAMES libopencv_core.a    libopencv_core.lib)
+find_library(OPENCV_PHOTO_STATIC_LIBRARY    NAMES libopencv_photo.a   libopencv_photo.lib)
+find_library(OPENCV_IMGPROC_STATIC_LIBRARY  NAMES libopencv_imgproc.a libopencv_imgproc.lib)
 
 find_package(TBB)
 IF (TBB_INCLUDE_DIRS)
@@ -41,13 +37,21 @@ ADD_EXECUTABLE(${EXECUTABLE_NAME}
   src/x3f_denoise.cpp src/x3f_printf.c ${AUXC}
 )
 
-target_link_libraries(${EXECUTABLE_NAME} PRIVATE Iconv::Iconv)
-target_link_libraries(${EXECUTABLE_NAME} PRIVATE opencv_core opencv_photo opencv_imgproc)
-target_link_libraries(${EXECUTABLE_NAME} PRIVATE TIFF::TIFF)
-target_link_libraries(${EXECUTABLE_NAME} PRIVATE z)
+target_include_directories(${EXECUTABLE_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS})
+
+target_link_libraries(${EXECUTABLE_NAME} Iconv::Iconv)
+#target_link_libraries(${EXECUTABLE_NAME} ${ICONV_STATIC_LIBRARY})
+target_link_libraries(${EXECUTABLE_NAME} opencv_core opencv_photo opencv_imgproc)
+#target_link_libraries(${EXECUTABLE_NAME} ${OPENCV_CORE_STATIC_LIBRARY})
+#target_link_libraries(${EXECUTABLE_NAME} ${OPENCV_PHOTO_STATIC_LIBRARY})
+#target_link_libraries(${EXECUTABLE_NAME} ${OPENCV_IMGPROC_STATIC_LIBRARY})
+target_link_libraries(${EXECUTABLE_NAME} ${TIFF_STATIC_LIBRARY})
+target_link_libraries(${EXECUTABLE_NAME} zstd::libzstd_static)
+target_link_libraries(${EXECUTABLE_NAME} ${LZMA_STATIC_LIBRARY})
+target_link_libraries(${EXECUTABLE_NAME} ${JPEG_STATIC_LIBRARY})
 
 IF (TBB_INCLUDE_DIRS)
-  target_link_libraries(${EXECUTABLE_NAME} PRIVATE tbb)
+  target_link_libraries(${EXECUTABLE_NAME} tbb)
 ENDIF (TBB_INCLUDE_DIRS)
 
 # Deal with libraries
@@ -68,21 +72,21 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")  # Bundle for macOS
   get_target_property(OPENCV_PHOTO_LOCATION_RELEASE   opencv_photo   IMPORTED_LOCATION_RELEASE)
   get_target_property(OPENCV_IMGPROC_LOCATION_RELEASE opencv_imgproc IMPORTED_LOCATION_RELEASE)
 
-  execute_process(
-    COMMAND ${CMAKE_COMMAND} -E copy ${TIFF_LIBRARY}                    ${FRAMEWORKS_DIRECTOR}
-    COMMAND ${CMAKE_COMMAND} -E copy "/usr/lib/libc++.1.dylib"          ${FRAMEWORKS_DIRECTOR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_CORE_LOCATION_RELEASE}    ${FRAMEWORKS_DIRECTOR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_PHOTO_LOCATION_RELEASE}   ${FRAMEWORKS_DIRECTOR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_IMGPROC_LOCATION_RELEASE} ${FRAMEWORKS_DIRECTOR}
-  )
+#  execute_process(
+#    COMMAND ${CMAKE_COMMAND} -E copy ${TIFF_LIBRARY}                    ${FRAMEWORKS_DIRECTOR}
+#    COMMAND ${CMAKE_COMMAND} -E copy "/usr/lib/libc++.1.dylib"          ${FRAMEWORKS_DIRECTOR}
+#    COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_CORE_LOCATION_RELEASE}    ${FRAMEWORKS_DIRECTOR}
+#    COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_PHOTO_LOCATION_RELEASE}   ${FRAMEWORKS_DIRECTOR}
+#    COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_IMGPROC_LOCATION_RELEASE} ${FRAMEWORKS_DIRECTOR}
+#  )
 
   # Specify the runtime path during linking
-  target_link_options(${EXECUTABLE_NAME} PRIVATE
-      "LINKER:-rpath,@executable_path/../Frameworks"
-      "LINKER:-rpath,@loader_path/../Frameworks"
-  )
-
-  execute_process(COMMAND chmod +w *)
+#  target_link_options(${EXECUTABLE_NAME} PRIVATE
+#      "LINKER:-rpath,@executable_path/../Frameworks"
+#      "LINKER:-rpath,@loader_path/../Frameworks"
+#  )
+#
+#  execute_process(COMMAND chmod +w *)
 
   # TODO: This is not working properly
 #  set_target_properties(${EXECUTABLE_NAME} PROPERTIES
