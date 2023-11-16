@@ -92,3 +92,5 @@ target_link_libraries(${EXECUTABLE_NAME} ${LZMA_STATIC_LIBRARY})
 target_link_libraries(${EXECUTABLE_NAME} ${JPEG_STATIC_LIBRARY})
 target_link_libraries(${EXECUTABLE_NAME} ${ZLIB_LIBRARIES})
 target_link_libraries(${EXECUTABLE_NAME} zstd::libzstd_static)
+
+add_dependencies(${EXECUTABLE_NAME}  opencv)
