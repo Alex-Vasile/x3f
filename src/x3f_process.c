@@ -709,9 +709,8 @@ static int preprocess_data(x3f_t *x3f, int fix_bad, char *wb, x3f_image_levels_t
     return 1;
 }
 
-static int get_conv(x3f_t *x3f, x3f_color_encoding_t encoding, char *wb,
-                    int lutsize, uint16_t max_out, double *lut,
-                    double *conv_matrix)
+static int
+get_conv(x3f_t *x3f, x3f_color_encoding_t encoding, char *wb, uint16_t max_out, double *lut, double *conv_matrix)
 {
     double raw_to_xyz[9];    /* White point for XYZ is assumed to be D65 */
     double xyz_to_rgb[9];
@@ -719,7 +718,8 @@ static int get_conv(x3f_t *x3f, x3f_color_encoding_t encoding, char *wb,
     double sensor_iso, capture_iso, iso_scaling;
 
     if (x3f_get_camf_float(x3f, "SensorISO", &sensor_iso) &&
-        x3f_get_camf_float(x3f, "CaptureISO", &capture_iso)) {
+        x3f_get_camf_float(x3f, "CaptureISO", &capture_iso))
+    {
         x3f_printf(DEBUG, "SensorISO = %g\n", sensor_iso);
         x3f_printf(DEBUG, "CaptureISO = %g\n", capture_iso);
         iso_scaling = capture_iso / sensor_iso;
@@ -736,17 +736,17 @@ static int get_conv(x3f_t *x3f, x3f_color_encoding_t encoding, char *wb,
 
     switch (encoding) {
         case SRGB:
-            x3f_sRGB_LUT(lut, lutsize, max_out);
+            x3f_sRGB_LUT(lut, 1024, max_out);
             x3f_XYZ_to_sRGB(xyz_to_rgb);
             break;
         case ARGB:
-            x3f_gamma_LUT(lut, lutsize, max_out, 2.2);
+            x3f_gamma_LUT(lut, 1024, max_out, 2.2);
             x3f_XYZ_to_AdobeRGB(xyz_to_rgb);
             break;
         case PPRGB: {
             double xyz_to_prophotorgb[9], d65_to_d50[9];
 
-            x3f_gamma_LUT(lut, lutsize, max_out, 1.8);
+            x3f_gamma_LUT(lut, 1024, max_out, 1.8);
             x3f_XYZ_to_ProPhotoRGB(xyz_to_prophotorgb);
             /* The standad white point for ProPhoto RGB is D50 */
             x3f_Bradford_D65_to_D50(d65_to_d50);
@@ -789,7 +789,7 @@ static int convert_data(x3f_t *x3f,
 
     if (image->channels < 3) return 0;
 
-    if (!get_conv(x3f, encoding, wb, LUTSIZE, max_out, lut, conv_matrix))
+    if (!get_conv(x3f, encoding, wb, max_out, lut, conv_matrix))
         return 0;
 
     if (apply_sgain) {
@@ -927,14 +927,13 @@ static int expand_quattro(x3f_t *x3f, int denoise, x3f_area16_t *expanded)
 
     if (expand_quattro(x3f, denoise, &expanded)) {
         /* NOTE: expand_quattro destroys the data of original_image */
-        if (!crop ||
-            !x3f_crop_area_camf(x3f, "ActiveImageArea", &expanded, 0, image))
+        if (!crop || !x3f_crop_area_camf(x3f, "ActiveImageArea", &expanded, 0, image)) {
             *image = expanded;
+        }
         original_image = expanded;
     } else if (denoise && !run_denoising(x3f)) return 0;
 
-    if (encoding != NONE &&
-        !convert_data(x3f, &original_image, &il, encoding, apply_sgain, wb)) {
+    if (encoding != NONE && !convert_data(x3f, &original_image, &il, encoding, apply_sgain, wb)) {
         free(image->buf);
         return 0;
     }
@@ -964,7 +963,7 @@ static int expand_quattro(x3f_t *x3f, int denoise, x3f_area16_t *expanded)
 
     if (image->channels < 3) return 0;
 
-    if (!get_conv(x3f, encoding, wb, LUTSIZE, max_out, lut, conv_matrix))
+    if (!get_conv(x3f, encoding, wb, max_out, lut, conv_matrix))
         return 0;
 
     if (apply_sgain) {

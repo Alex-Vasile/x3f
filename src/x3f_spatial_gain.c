@@ -408,10 +408,9 @@ int x3f_get_spatial_gain(x3f_t *x3f, char *wb, x3f_spatial_gain_corr_t *corr)
 
 void x3f_cleanup_spatial_gain(x3f_spatial_gain_corr_t *corr, int corr_num)
 {
-    int i;
-
-    for (i = 0; i < corr_num; i++)
+    for (int i = 0; i < corr_num; i++) {
         if (corr[i].malloc) free(corr[i].gain);
+    }
 }
 
 double x3f_calc_spatial_gain(x3f_spatial_gain_corr_t *corr, int corr_num,
