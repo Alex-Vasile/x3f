@@ -616,8 +616,9 @@ static int preprocess_data(x3f_t *x3f, int fix_bad, char *wb, x3f_image_levels_t
 
     if (!x3f_image_area(x3f, &image) || image.channels < 3) return 0;
     if (quattro && (qtop.channels < 1 ||
-                    qtop.rows < 2 * image.rows || qtop.columns < 2 * image.columns))
+                    qtop.rows < 2 * image.rows || qtop.columns < 2 * image.columns)) {
         return 0;
+    }
 
     if (!get_black_level(x3f, &image, 1, colors_in, black_level, black_dev) ||
         (quattro && !get_black_level(x3f, &qtop, 0, 1,
@@ -651,24 +652,28 @@ static int preprocess_data(x3f_t *x3f, int fix_bad, char *wb, x3f_image_levels_t
     x3f_printf(DEBUG, "max_intermediate = {%u,%u,%u}\n",
                ilevels->white[0], ilevels->white[1], ilevels->white[2]);
 
-    for (color = 0; color < 3; color++)
-        scale[color] = (ilevels->white[color] - ilevels->black[color]) /
-                       (max_raw[color] - black_level[color]);
+    for (color = 0; color < 3; color++){
+        scale[color] = (ilevels->white[color] - ilevels->black[color])
+                        / (max_raw[color] - black_level[color]);
+    }
 
     /* Preprocess image data (HUF/TRU->x3rgb16) */
-    for (row = 0; row < image.rows; row++)
-        for (col = 0; col < image.columns; col++)
+    for (row = 0; row < image.rows; row++) {
+        for (col = 0; col < image.columns; col++) {
             for (color = 0; color < colors_in; color++) {
-                uint16_t *valp =
-                    &image.data[image.row_stride * row + image.channels * col + color];
-                int32_t out =
-                    (int32_t) round(scale[color] * (*valp - black_level[color]) +
-                                    ilevels->black[color]);
+                uint16_t *valp = &image.data[image.row_stride * row + image.channels * col + color];
+                int32_t out = (int32_t) round(ilevels->black[color] + scale[color] * (*valp - black_level[color]));
 
-                if (out < 0) *valp = 0;
-                else if (out > 65535) *valp = 65535;
-                else *valp = out;
+                if (out < 0) {
+                    *valp = 0;
+                } else if (out > 65535) {
+                    *valp = 65535;
+                } else {
+                    *valp = out;
+                }
             }
+        }
+    }
 
     if (quattro) {
         /* Preprocess and downsample Quattro top layer (Q->top16) */
@@ -819,9 +824,10 @@ static int convert_data(x3f_t *x3f,
             /* Do color conversion */
             x3f_3x3_3x1_mul(conv_matrix, input, output);
 
-            /* Write back the data, doing non linear coding */
-            for (color = 0; color < 3; color++)
+            /* Write back the data, doing non-linear coding */
+            for (color = 0; color < 3; color++) {
                 *valp[color] = x3f_LUT_lookup(lut, LUTSIZE, output[color]);
+            }
         }
     }
 
