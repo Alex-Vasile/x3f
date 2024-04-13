@@ -780,7 +780,7 @@ static int convert_data(x3f_t *x3f,
                         char *wb)
 {
     int row, col, color;
-    uint16_t max_out = 65535; /* TODO: should be possible to adjust */
+    uint16_t max_out = 65535;
 
     double conv_matrix[9];
     double lut[LUTSIZE];
