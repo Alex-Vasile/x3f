@@ -18,8 +18,11 @@
 #endif
 
 void median_filter(x3f_area16_t *image);
-void denoise_aniso(x3f_area16_t *image, const int& in_iterations);
-void denoise_iso(x3f_area16_t *image, const int& in_iterations);
-void denoise_splotchify(x3f_area16_t *image, const int& in_radius);
+
+void denoise_aniso(x3f_area16_t *image, const int &in_iterations);
+
+void denoise_iso(x3f_area16_t *image, const int &in_iterations);
+
+void denoise_splotchify(x3f_area16_t *image, const int &in_radius);
 
 #endif //DENOISE_ANISO

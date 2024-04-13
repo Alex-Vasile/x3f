@@ -14,12 +14,12 @@
 #include "x3f_process.h"
 
 extern x3f_return_t x3f_dump_raw_data_as_tiff(x3f_t *x3f, char *outfilename,
-					      x3f_color_encoding_t encoding,
-					      int crop,
-					      int fix_bad,
-					      int denoise,
-					      int apply_sgain,
-					      char *wb,
-					      int compress);
+                                              x3f_color_encoding_t encoding,
+                                              int crop,
+                                              int fix_bad,
+                                              int denoise,
+                                              int apply_sgain,
+                                              char *wb,
+                                              int compress);
 
 #endif

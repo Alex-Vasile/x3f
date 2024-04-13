@@ -15,6 +15,7 @@
 extern uint32_t max_printed_matrix_elements;
 
 extern void x3f_print_meta(x3f_t *x3f);
+
 extern x3f_return_t x3f_dump_meta_data(x3f_t *x3f, char *outfilename);
 
 #endif

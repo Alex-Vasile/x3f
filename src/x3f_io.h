@@ -32,7 +32,7 @@ extern "C" {
 #define NUM_EXT_DATA_3_0 64
 #define NUM_EXT_DATA NUM_EXT_DATA_3_0
 
-#define X3F_VERSION(MAJ,MIN) (uint32_t)(((MAJ)<<16) + MIN)
+#define X3F_VERSION(MAJ, MIN) (uint32_t)(((MAJ)<<16) + MIN)
 #define X3F_VERSION_2_0 X3F_VERSION(2,0)
 #define X3F_VERSION_2_1 X3F_VERSION(2,1)
 #define X3F_VERSION_2_2 X3F_VERSION(2,2)
@@ -95,38 +95,42 @@ typedef uint16_t utf16_t;
 
 typedef int bool_t;
 
-typedef enum x3f_extended_types_e {
-  X3F_EXT_TYPE_NONE=0,
-  X3F_EXT_TYPE_EXPOSURE_ADJUST=1,
-  X3F_EXT_TYPE_CONTRAST_ADJUST=2,
-  X3F_EXT_TYPE_SHADOW_ADJUST=3,
-  X3F_EXT_TYPE_HIGHLIGHT_ADJUST=4,
-  X3F_EXT_TYPE_SATURATION_ADJUST=5,
-  X3F_EXT_TYPE_SHARPNESS_ADJUST=6,
-  X3F_EXT_TYPE_RED_ADJUST=7,
-  X3F_EXT_TYPE_GREEN_ADJUST=8,
-  X3F_EXT_TYPE_BLUE_ADJUST=9,
-  X3F_EXT_TYPE_FILL_LIGHT_ADJUST=10
+typedef enum x3f_extended_types_e
+{
+  X3F_EXT_TYPE_NONE = 0,
+  X3F_EXT_TYPE_EXPOSURE_ADJUST = 1,
+  X3F_EXT_TYPE_CONTRAST_ADJUST = 2,
+  X3F_EXT_TYPE_SHADOW_ADJUST = 3,
+  X3F_EXT_TYPE_HIGHLIGHT_ADJUST = 4,
+  X3F_EXT_TYPE_SATURATION_ADJUST = 5,
+  X3F_EXT_TYPE_SHARPNESS_ADJUST = 6,
+  X3F_EXT_TYPE_RED_ADJUST = 7,
+  X3F_EXT_TYPE_GREEN_ADJUST = 8,
+  X3F_EXT_TYPE_BLUE_ADJUST = 9,
+  X3F_EXT_TYPE_FILL_LIGHT_ADJUST = 10
 } x3f_extended_types_t;
 
-typedef struct x3f_property_s {
+typedef struct x3f_property_s
+{
   /* Read from file */
   uint32_t name_offset;
   uint32_t value_offset;
 
   /* Computed */
-  utf16_t *name;		/* 0x0000 terminated UTF 16 */
+  utf16_t *name;        /* 0x0000 terminated UTF 16 */
   utf16_t *value;               /* 0x0000 terminated UTF 16 */
-  char *name_utf8;		/* converted to UTF 8 */
+  char *name_utf8;        /* converted to UTF 8 */
   char *value_utf8;          /* converted to UTF 8 */
 } x3f_property_t;
 
-typedef struct x3f_property_table_s {
+typedef struct x3f_property_table_s
+{
   uint32_t size;
   x3f_property_t *element;
 } x3f_property_table_t;
 
-typedef struct x3f_property_list_s {
+typedef struct x3f_property_list_s
+{
   /* 2.0 Fields */
   uint32_t num_properties;
   uint32_t character_format;
@@ -141,25 +145,28 @@ typedef struct x3f_property_list_s {
 
 } x3f_property_list_t;
 
-typedef struct x3f_table8_s {
+typedef struct x3f_table8_s
+{
   uint32_t size;
   uint8_t *element;
 } x3f_table8_t;
 
-typedef struct x3f_table16_s {
+typedef struct x3f_table16_s
+{
   uint32_t size;
   uint16_t *element;
 } x3f_table16_t;
 
-typedef struct x3f_table32_s {
+typedef struct x3f_table32_s
+{
   uint32_t size;
   uint32_t *element;
 } x3f_table32_t;
 
 typedef struct
 {
-  uint8_t *data;		/* Pointer to actual image data */
-  void *buf;			/* Pointer to allocated buffer for free() */
+  uint8_t *data;        /* Pointer to actual image data */
+  void *buf;            /* Pointer to allocated buffer for free() */
   uint32_t rows;
   uint32_t columns;
   uint32_t channels;
@@ -168,8 +175,8 @@ typedef struct
 
 typedef struct
 {
-  uint16_t *data;		/* Pointer to actual image data */
-  void *buf;			/* Pointer to allocated buffer for free() */
+  uint16_t *data;        /* Pointer to actual image data */
+  void *buf;            /* Pointer to allocated buffer for free() */
   uint32_t rows;
   uint32_t columns;
   uint32_t channels;
@@ -178,22 +185,26 @@ typedef struct
 
 #define UNDEFINED_LEAF 0xffffffff
 
-typedef struct x3f_huffnode_s {
+typedef struct x3f_huffnode_s
+{
   struct x3f_huffnode_s *branch[2];
   uint32_t leaf;
 } x3f_huffnode_t;
 
-typedef struct x3f_hufftree_s {
+typedef struct x3f_hufftree_s
+{
   uint32_t free_node_index; /* Free node index in huffman tree array */
   x3f_huffnode_t *nodes;    /* Coding tree */
 } x3f_hufftree_t;
 
-typedef struct x3f_true_huffman_element_s {
+typedef struct x3f_true_huffman_element_s
+{
   uint8_t code_size;
   uint8_t code;
 } x3f_true_huffman_element_t;
 
-typedef struct x3f_true_huffman_s {
+typedef struct x3f_true_huffman_s
+{
   uint32_t size;
   x3f_true_huffman_element_t *element;
 } x3f_true_huffman_t;
@@ -201,40 +212,45 @@ typedef struct x3f_true_huffman_s {
 /* 0=bottom, 1=middle, 2=top */
 #define TRUE_PLANES 3
 
-typedef struct x3f_true_s {
-  uint16_t seed[TRUE_PLANES];	/* Always 512,512,512 */
-  uint16_t unknown;		/* Always 0 */
-  x3f_true_huffman_t table;	/* Huffman table - zero
+typedef struct x3f_true_s
+{
+  uint16_t seed[TRUE_PLANES];    /* Always 512,512,512 */
+  uint16_t unknown;        /* Always 0 */
+  x3f_true_huffman_t table;    /* Huffman table - zero
 				   terminated. size is the number of
 				   leaves plus 1.*/
 
-  x3f_table32_t plane_size;	/* Size of the 3 planes */
+  x3f_table32_t plane_size;    /* Size of the 3 planes */
   uint8_t *plane_address[TRUE_PLANES]; /* computed offset to the planes */
-  x3f_hufftree_t tree;		/* Coding tree */
-  x3f_area16_t x3rgb16;		/* 3x16 bit X3-RGB data */
+  x3f_hufftree_t tree;        /* Coding tree */
+  x3f_area16_t x3rgb16;        /* 3x16 bit X3-RGB data */
 } x3f_true_t;
 
-typedef struct x3f_quattro_s {
-  struct {
+typedef struct x3f_quattro_s
+{
+  struct
+  {
     uint16_t columns;
     uint16_t rows;
   } plane[TRUE_PLANES];
   uint32_t unknown;
 
   bool_t quattro_layout;
-  x3f_area16_t top16;		/* Container for the bigger top layer */
+  x3f_area16_t top16;        /* Container for the bigger top layer */
 } x3f_quattro_t;
 
-typedef struct x3f_huffman_s {
+typedef struct x3f_huffman_s
+{
   x3f_table16_t mapping;   /* Value Mapping = X3F lossy compression */
   x3f_table32_t table;          /* Coding Table */
-  x3f_hufftree_t tree;		/* Coding tree */
+  x3f_hufftree_t tree;        /* Coding tree */
   x3f_table32_t row_offsets;    /* Row offsets */
-  x3f_area8_t rgb8;		/* 3x8 bit RGB data */
-  x3f_area16_t x3rgb16;		/* 3x16 bit X3-RGB data */
+  x3f_area8_t rgb8;        /* 3x8 bit RGB data */
+  x3f_area16_t x3rgb16;        /* 3x16 bit X3-RGB data */
 } x3f_huffman_t;
 
-typedef struct x3f_image_data_s {
+typedef struct x3f_image_data_s
+{
   /* 2.0 Fields */
   /* ------------------------------------------------------------------ */
   /* Known combinations of type and format are:
@@ -255,8 +271,8 @@ typedef struct x3f_image_data_s {
 
   /* NULL if not used */
   x3f_huffman_t *huffman;       /* Huffman help data */
-  x3f_true_t *tru;		/* TRUE help data */
-  x3f_quattro_t *quattro;	/* Quattro help data */
+  x3f_true_t *tru;        /* TRUE help data */
+  x3f_quattro_t *quattro;    /* Quattro help data */
 
   void *data;                   /* Take from file if NULL. Otherwise,
                                    this is the actual data bytes in
@@ -265,16 +281,21 @@ typedef struct x3f_image_data_s {
 
 } x3f_image_data_t;
 
-typedef struct camf_dim_entry_s {
+typedef struct camf_dim_entry_s
+{
   uint32_t size;
   uint32_t name_offset;
   uint32_t n; /* 0,1,2,3... */
   char *name;
 } camf_dim_entry_t;
 
-typedef enum {M_FLOAT, M_INT, M_UINT} matrix_type_t;
+typedef enum
+{
+  M_FLOAT, M_INT, M_UINT
+} matrix_type_t;
 
-typedef struct camf_entry_s {
+typedef struct camf_entry_s
+{
   /* pointer into decoded data */
   void *entry;
 
@@ -319,44 +340,51 @@ typedef struct camf_entry_s {
 
 } camf_entry_t;
 
-typedef struct camf_entry_table_s {
+typedef struct camf_entry_table_s
+{
   uint32_t size;
   camf_entry_t *element;
 } camf_entry_table_t;
 
-typedef struct x3f_camf_typeN_s {
+typedef struct x3f_camf_typeN_s
+{
   uint32_t val0;
   uint32_t val1;
   uint32_t val2;
   uint32_t val3;
 } x3f_camf_typeN_t;
 
-typedef struct x3f_camf_type2_s {
+typedef struct x3f_camf_type2_s
+{
   uint32_t reserved;
   uint32_t infotype;
   uint32_t infotype_version;
   uint32_t crypt_key;
 } x3f_camf_type2_t;
 
-typedef struct x3f_camf_type4_s {
+typedef struct x3f_camf_type4_s
+{
   uint32_t decoded_data_size;
   uint32_t decode_bias;
   uint32_t block_size;
   uint32_t block_count;
 } x3f_camf_type4_t;
 
-typedef struct x3f_camf_type5_s {
+typedef struct x3f_camf_type5_s
+{
   uint32_t decoded_data_size;
   uint32_t decode_bias;
   uint32_t unknown2;
   uint32_t unknown3;
 } x3f_camf_type5_t;
 
-typedef struct x3f_camf_s {
+typedef struct x3f_camf_s
+{
 
   /* Header info */
   uint32_t type;
-  union {
+  union
+  {
     x3f_camf_typeN_t tN;
     x3f_camf_type2_t t2;
     x3f_camf_type4_t t4;
@@ -381,18 +409,22 @@ typedef struct x3f_camf_s {
   camf_entry_table_t entry_table;
 } x3f_camf_t;
 
-typedef struct x3f_directory_entry_header_s {
-  uint32_t identifier;        /* Should be ´SECp´, "SECi", ... */
+typedef struct x3f_directory_entry_header_s
+{
+  uint32_t identifier;        /* Should be ï¿½SECpï¿½, "SECi", ... */
   uint32_t version;           /* 0x00020001 is version 2.1  */
-  union {
+  union
+  {
     x3f_property_list_t property_list;
     x3f_image_data_t image_data;
     x3f_camf_t camf;
   } data_subsection;
 } x3f_directory_entry_header_t;
 
-typedef struct x3f_directory_entry_s {
-  struct {
+typedef struct x3f_directory_entry_s
+{
+  struct
+  {
     uint32_t offset;
     uint32_t size;
   } input, output;
@@ -402,8 +434,9 @@ typedef struct x3f_directory_entry_s {
   x3f_directory_entry_header_t header;
 } x3f_directory_entry_t;
 
-typedef struct x3f_directory_section_s {
-  uint32_t identifier;          /* Should be ´SECd´ */
+typedef struct x3f_directory_section_s
+{
+  uint32_t identifier;          /* Should be ï¿½SECdï¿½ */
   uint32_t version;             /* 0x00020001 is version 2.1  */
 
   /* 2.0 Fields */
@@ -411,9 +444,10 @@ typedef struct x3f_directory_section_s {
   x3f_directory_entry_t *directory_entry;
 } x3f_directory_section_t;
 
-typedef struct x3f_header_s {
+typedef struct x3f_header_s
+{
   /* 2.0 Fields */
-  uint32_t identifier;          /* Should be ´FOVb´ */
+  uint32_t identifier;          /* Should be ï¿½FOVbï¿½ */
   uint32_t version;             /* 0x00020001 means 2.1 */
   uint8_t unique_identifier[SIZE_UNIQUE_IDENTIFIER];
   uint32_t mark_bits;
@@ -429,25 +463,29 @@ typedef struct x3f_header_s {
   float extended_data[NUM_EXT_DATA]; /* 32 bits, but do type differ? */
 } x3f_header_t;
 
-typedef struct x3f_info_s {
+typedef struct x3f_info_s
+{
   char *error;
-  struct {
+  struct
+  {
     FILE *file;                 /* Use if more data is needed */
   } input, output;
 } x3f_info_t;
 
-typedef struct x3f_s {
+typedef struct x3f_s
+{
   x3f_info_t info;
   x3f_header_t header;
   x3f_directory_section_t directory_section;
 } x3f_t;
 
-typedef enum x3f_return_e {
-  X3F_OK=0,
-  X3F_ARGUMENT_ERROR=1,
-  X3F_INFILE_ERROR=2,
-  X3F_OUTFILE_ERROR=3,
-  X3F_INTERNAL_ERROR=4
+typedef enum x3f_return_e
+{
+  X3F_OK = 0,
+  X3F_ARGUMENT_ERROR = 1,
+  X3F_INFILE_ERROR = 2,
+  X3F_OUTFILE_ERROR = 3,
+  X3F_INTERNAL_ERROR = 4
 } x3f_return_t;
 
 extern int legacy_offset;

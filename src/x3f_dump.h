@@ -13,6 +13,7 @@
 #include "x3f_io.h"
 
 extern x3f_return_t x3f_dump_raw_data(x3f_t *x3f, char *outfilename);
+
 extern x3f_return_t x3f_dump_jpeg(x3f_t *x3f, char *outfilename);
 
 #endif
