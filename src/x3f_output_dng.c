@@ -117,8 +117,9 @@ static int write_spatial_gain(x3f_t *x3f, x3f_area16_t *image, char *wb,
         PUT_BIG_64(gain_map->MapOriginH, originh);
         PUT_BIG_32(gain_map->MapPlanes, c->channels);
 
-        for (j = 0; j < c->rows * c->cols * c->channels; j++)
+        for (j = 0; j < c->rows * c->cols * c->channels; j++) {
             PUT_BIG_32(gain_map->MapGain[j], c->gain[j]);
+        }
     }
 
     x3f_cleanup_spatial_gain(corr, corr_num);
@@ -412,15 +413,19 @@ x3f_return_t x3f_dump_raw_data_as_dng(x3f_t *x3f,
     TIFFSetField(f_out, TIFFTAG_BLACKLEVEL, 3, black_level);
     TIFFSetField(f_out, TIFFTAG_WHITELEVEL, 3, ilevels.white);
 
-    if (apply_sgain)
-        if (!write_spatial_gain(x3f, &image, wb, f_out))
+    if (apply_sgain) {
+        if (!write_spatial_gain(x3f, &image, wb, f_out)) {
             x3f_printf(WARN, "Could not get spatial gain\n");
+        }
+    }
 
-    if (get_camf_rect_as_dngrect(x3f, "ActiveImageArea", &image, 1, active_area))
+    if (get_camf_rect_as_dngrect(x3f, "ActiveImageArea", &image, 1, active_area)) {
         TIFFSetField(f_out, TIFFTAG_ACTIVEAREA, active_area);
+    }
 
-    for (row = 0; row < image.rows; row++)
+    for (row = 0; row < image.rows; row++) {
         TIFFWriteScanline(f_out, image.data + image.row_stride * row, row, 0);
+    }
 
     TIFFWriteDirectory(f_out);
     TIFFClose(f_out);
