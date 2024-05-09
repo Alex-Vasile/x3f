@@ -212,26 +212,28 @@ static void get_raw_neutral(double *raw_to_xyz, double *raw_neutral)
 
     if (x3f_get_camf_matrix_for_wb(x3f, "WhiteBalanceGains", wb, 3, 0, gain) ||
         x3f_get_camf_matrix_for_wb(x3f, "DP1_WhiteBalanceGains", wb, 3, 0, gain));
-    else if (x3f_get_camf_matrix_for_wb(x3f, "WhiteBalanceIlluminants", wb,
-                                        3, 3, cam_to_xyz) &&
-             x3f_get_camf_matrix_for_wb(x3f, "WhiteBalanceCorrections", wb,
-                                        3, 3, wb_correction)) {
+    else if (x3f_get_camf_matrix_for_wb(x3f, "WhiteBalanceIlluminants", wb,3, 3, cam_to_xyz)
+            && x3f_get_camf_matrix_for_wb(x3f, "WhiteBalanceCorrections", wb,3, 3, wb_correction)) {
         double raw_to_xyz[9], raw_neutral[3];
 
         x3f_3x3_3x3_mul(wb_correction, cam_to_xyz, raw_to_xyz);
         get_raw_neutral(raw_to_xyz, raw_neutral);
         x3f_3x1_invert(raw_neutral, gain);
-    } else
+    } else {
         return 0;
+    }
 
-    if (x3f_get_camf_float_vector(x3f, "SensorAdjustmentGainFact", gain_fact))
+    if (x3f_get_camf_float_vector(x3f, "SensorAdjustmentGainFact", gain_fact)) {
         x3f_3x1_comp_mul(gain_fact, gain, gain);
+    }
 
-    if (x3f_get_camf_float_vector(x3f, "TempGainFact", gain_fact))
+    if (x3f_get_camf_float_vector(x3f, "TempGainFact", gain_fact)) {
         x3f_3x1_comp_mul(gain_fact, gain, gain);
+    }
 
-    if (x3f_get_camf_float_vector(x3f, "FNumberGainFact", gain_fact))
+    if (x3f_get_camf_float_vector(x3f, "FNumberGainFact", gain_fact)) {
         x3f_3x1_comp_mul(gain_fact, gain, gain);
+    }
 
     x3f_printf(DEBUG, "gain\n");
     x3f_3x1_print(DEBUG, gain);
@@ -302,12 +304,12 @@ static int get_max_intermediate(x3f_t *x3f, char *wb,
     if (!x3f_get_gain(x3f, wb, gain)) return 0;
 
     /* Cap the gains to 1.0 to avoid clipping */
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < 3; i++) {
         if (gain[i] > maxgain) maxgain = gain[i];
-    for (i = 0; i < 3; i++)
-        max_intermediate[i] =
-            (int32_t) round(gain[i] * (INTERMEDIATE_UNIT - intermediate_bias) / maxgain +
-                            intermediate_bias);
+    }
+    for (i = 0; i < 3; i++) {
+        max_intermediate[i] = (int32_t) round(gain[i] * (INTERMEDIATE_UNIT - intermediate_bias) / maxgain + intermediate_bias);
+    }
 
     return 1;
 }
@@ -658,18 +660,32 @@ static int preprocess_data(x3f_t *x3f, int fix_bad, char *wb, x3f_image_levels_t
     }
 
     /* Preprocess image data (HUF/TRU->x3rgb16) */
+    uint16_t *valp[3];
     for (row = 0; row < image.rows; row++) {
         for (col = 0; col < image.columns; col++) {
             for (color = 0; color < colors_in; color++) {
-                uint16_t *valp = &image.data[image.row_stride * row + image.channels * col + color];
-                int32_t out = (int32_t) round(ilevels->black[color] + scale[color] * (*valp - black_level[color]));
+                valp[color] = &image.data[image.row_stride * row + image.channels * col + color];
+            }
 
+            if ((0.9 < (*valp[2] / (double) ilevels->white[2]))
+               || (0.9 < (*valp[1] / (double) ilevels->white[1]))) {
+                double red = scale[0] * (*valp[0] - ilevels->black[0]) / (ilevels->white[0] - ilevels->black[0]);
+                double gre = scale[1] * (*valp[1] - ilevels->black[1]) / (ilevels->white[1] - ilevels->black[1]);
+                double blu = scale[2] * (*valp[2] - ilevels->black[2]) / (ilevels->white[2] - ilevels->black[2]);
+                double grey = (red + gre + blu) / 3;
+                *valp[0] = (uint16_t) round(65535 * scale[0] * grey);
+                *valp[1] = (uint16_t) round(65535 * scale[1] * grey);
+                *valp[2] = (uint16_t) round(65535 * scale[2] * grey);
+            }
+
+            for (color = 0; color < colors_in; color++) {
+                int32_t out = (int32_t) round(ilevels->black[color] + scale[color] * (*valp[color] - black_level[color]));
                 if (out < 0) {
-                    *valp = 0;
+                    *valp[color] = 0;
                 } else if (out > 65535) {
-                    *valp = 65535;
+                    *valp[color] = 65535;
                 } else {
-                    *valp = out;
+                    *valp[color] = out;
                 }
             }
         }
@@ -805,6 +821,7 @@ static int convert_data(x3f_t *x3f,
         sgain_num = 0;
     }
 
+    // Works, but doesn't change the raw output.
     for (row = 0; row < image->rows; row++) {
         for (col = 0; col < image->columns; col++) {
             uint16_t *valp[3];
