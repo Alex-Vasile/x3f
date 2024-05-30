@@ -41,9 +41,9 @@ Scenario Outline: conversions to various compressed outputs will produce exactly
     | x3f_test_files/_SDI8284.X3F | TIFF      | x3f_test_files/_SDI8284.X3F.tif | e93956ef0b16d5befef36365ba39fb71  |
 
 
-Scenario Outline: denoised conversions to dng will produce the exact same outputs
+Scenario Outline: conversions to dng will produce the exact same outputs
   Given an input image <image> without a <converted_image>
-  When the <image> is denoised and converted by the code
+  When the <image> is converted by the code
   Then the <converted_image> has the right <md5> hash value
   Examples: images
     | image                       | converted_image                 | md5                               |
@@ -51,9 +51,9 @@ Scenario Outline: denoised conversions to dng will produce the exact same output
     | x3f_test_files/_SDI8284.X3F | x3f_test_files/_SDI8284.X3F.dng | b89e9512d3f1d4c3a7ce134645866830  |
 
 
-Scenario Outline: denoised conversions to tiff will produce the exact same outputs
+Scenario Outline: conversions to tiff will produce the exact same outputs
   Given an input image <image> without a <converted_image>
-  When the <image> is denoised and converted by the code to a cropped color TIFF
+  When the <image> is converted by the code to a cropped color TIFF
   Then the <converted_image> has the right <md5> hash value
   Examples: images
     | image                       | converted_image                 | md5                               |

@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <stdio.h>
 #include <assert.h>
 
 static int sum_area(x3f_area16_t area, int colors,
@@ -288,6 +287,7 @@ static void get_raw_neutral(double *raw_to_xyz, double *raw_neutral)
     return 1;
 }
 
+// TODO: Still needed?
 /* x3f_denoise expects a 14-bit image since rescaling by a factor of 4
    takes place internally. */
 #define INTERMEDIATE_DEPTH 14
@@ -856,38 +856,13 @@ static int convert_data(x3f_t *x3f,
     return 1;
 }
 
-static int run_denoising(x3f_t *x3f)
+static int expand_quattro(x3f_t *x3f, x3f_area16_t *expanded)
 {
-    x3f_area16_t original_image, image;
-    x3f_denoise_type_t type = X3F_DENOISE_STD;
-    char *sensorid;
-
-    if (!x3f_image_area(x3f, &original_image)) return 0;
-    if (!x3f_crop_area_camf(x3f, "ActiveImageArea", &original_image, 1, &image)) {
-        image = original_image;
-        x3f_printf(WARN, "Could not get active area, denoising entire image\n");
-    }
-
-    if (x3f_get_prop_entry(x3f, "SENSORID", &sensorid) &&
-        !strcmp(sensorid, "F20"))
-        type = X3F_DENOISE_F20;
-
-    x3f_denoise(&image, type);
-    return 1;
-}
-
-static int expand_quattro(x3f_t *x3f, int denoise, x3f_area16_t *expanded)
-{
-    x3f_area16_t image, active, qtop, qtop_crop, active_exp;
+    x3f_area16_t image, qtop, qtop_crop;
     uint32_t rect[4];
 
     if (!x3f_image_area_qtop(x3f, &qtop)) return 0;
     if (!x3f_image_area(x3f, &image)) return 0;
-    if (denoise &&
-        !x3f_crop_area_camf(x3f, "ActiveImageArea", &image, 1, &active)) {
-        active = image;
-        x3f_printf(WARN, "Could not get active area, denoising entire image\n");
-    }
 
     rect[0] = 0;
     rect[1] = 0;
@@ -902,14 +877,7 @@ static int expand_quattro(x3f_t *x3f, int denoise, x3f_area16_t *expanded)
     expanded->data = expanded->buf =
         malloc(expanded->rows * expanded->row_stride * sizeof(uint16_t));
 
-    if (denoise && !x3f_crop_area_camf(x3f, "ActiveImageArea", expanded, 0,
-                                       &active_exp)) {
-        active_exp = *expanded;
-        x3f_printf(WARN, "Could not get active area, denoising entire image\n");
-    }
-
-    x3f_expand_quattro(&image, denoise ? &active : NULL, &qtop_crop,
-                       expanded, denoise ? &active_exp : NULL);
+    x3f_expand_quattro(&image, &qtop_crop, expanded);
 
     return 1;
 }
@@ -920,7 +888,6 @@ static int expand_quattro(x3f_t *x3f, int denoise, x3f_area16_t *expanded)
                                x3f_color_encoding_t encoding,
                                int crop,
                                int fix_bad,
-                               int denoise,
                                int apply_sgain,
                                char *wb)
 {
@@ -948,13 +915,13 @@ static int expand_quattro(x3f_t *x3f, int denoise, x3f_area16_t *expanded)
 
     if (!preprocess_data(x3f, fix_bad, wb, &il)) return 0;
 
-    if (expand_quattro(x3f, denoise, &expanded)) {
+    if (expand_quattro(x3f, &expanded)) {
         /* NOTE: expand_quattro destroys the data of original_image */
         if (!crop || !x3f_crop_area_camf(x3f, "ActiveImageArea", &expanded, 0, image)) {
             *image = expanded;
         }
         original_image = expanded;
-    } else if (denoise && !run_denoising(x3f)) return 0;
+    }
 
     if (encoding != NONE && !convert_data(x3f, &original_image, &il, encoding, apply_sgain, wb)) {
         free(image->buf);

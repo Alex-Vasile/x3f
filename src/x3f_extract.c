@@ -17,7 +17,6 @@
 #include "x3f_histogram.h"
 #include "x3f_print_meta.h"
 #include "x3f_dump.h"
-#include "x3f_denoise.h"
 #include "x3f_printf.h"
 
 #include <stdio.h>
@@ -74,7 +73,6 @@ static void usage(char *progname)
             "   -unprocessed    Dump RAW without any preprocessing\n"
             "   -qtop           Dump Quattro top layer without preprocessing\n"
             "   -no-crop        Do not crop to active area\n"
-            "   -no-denoise     Do not denoise RAW data\n"
             "   -no-sgain       Do not apply spatial gain (color compensation)\n"
             "   -no-fix-bad     Do not fix bad pixels\n"
             "   -sgain          Apply spatial gain (default except for Quattro)\n"
@@ -181,7 +179,6 @@ int main(int argc, char *argv[])
     int extract_unconverted_raw = 0;
     int crop = 1;
     int fix_bad = 1;
-    int denoise = 1;
     int apply_sgain = -1;
     output_file_type_t file_type = DNG;
     x3f_color_encoding_t color_encoding = SRGB;
@@ -190,7 +187,6 @@ int main(int argc, char *argv[])
     int log_hist = 0;
     char *wb = NULL;
     int compress = 0;
-    int use_opencl = 0;
     char *outdir = NULL;
     x3f_return_t ret;
 
@@ -252,8 +248,6 @@ int main(int argc, char *argv[])
             crop = 0;
         else if (!strcmp(argv[i], "-no-fix-bad"))
             fix_bad = 0;
-        else if (!strcmp(argv[i], "-no-denoise"))
-            denoise = 0;
         else if (!strcmp(argv[i], "-no-sgain"))
             apply_sgain = 0;
         else if (!strcmp(argv[i], "-sgain"))
@@ -262,8 +256,6 @@ int main(int argc, char *argv[])
             wb = argv[++i];
         else if (!strcmp(argv[i], "-compress"))
             compress = 1;
-        else if (!strcmp(argv[i], "-ocl"))
-            use_opencl = 1;
 
             /* Strange Stuff */
         else if ((!strcmp(argv[i], "-offset")) && (i + 1) < argc)
@@ -279,8 +271,6 @@ int main(int argc, char *argv[])
         x3f_printf(ERR, "Could not find outdir %s\n", outdir);
         usage(argv[0]);
     }
-
-    x3f_set_use_opencl(use_opencl);
 
     extract_meta =
         file_type == META ||
@@ -399,13 +389,13 @@ int main(int argc, char *argv[])
                 x3f_printf(INFO, "Dump RAW as TIFF to %s\n", outfile);
                 ret_dump = x3f_dump_raw_data_as_tiff(x3f, tmpfile,
                                                      color_encoding,
-                                                     crop, fix_bad, denoise, sgain, wb,
+                                                     crop, fix_bad, sgain, wb,
                                                      compress);
                 break;
             case DNG:
                 x3f_printf(INFO, "Dump RAW as DNG to %s\n", outfile);
                 ret_dump = x3f_dump_raw_data_as_dng(x3f, tmpfile,
-                                                    fix_bad, denoise, sgain, wb,
+                                                    fix_bad, sgain, wb,
                                                     compress);
                 break;
             case PPMP3:
@@ -413,14 +403,14 @@ int main(int argc, char *argv[])
                 x3f_printf(INFO, "Dump RAW as PPM to %s\n", outfile);
                 ret_dump = x3f_dump_raw_data_as_ppm(x3f, tmpfile,
                                                     color_encoding,
-                                                    crop, fix_bad, denoise, sgain, wb,
+                                                    crop, fix_bad, sgain, wb,
                                                     file_type == PPMP6);
                 break;
             case HISTOGRAM:
                 x3f_printf(INFO, "Dump RAW as CSV histogram to %s\n", outfile);
                 ret_dump = x3f_dump_raw_data_as_histogram(x3f, tmpfile,
                                                           color_encoding,
-                                                          crop, fix_bad, denoise, sgain, wb,
+                                                          crop, fix_bad, sgain, wb,
                                                           log_hist);
                 break;
         }

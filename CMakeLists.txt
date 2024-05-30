@@ -37,8 +37,7 @@ ADD_EXECUTABLE(${EXECUTABLE_NAME}
   src/x3f_extract.c src/x3f_version.c src/x3f_io.c src/x3f_process.c src/x3f_meta.c src/x3f_image.c
   src/x3f_spatial_gain.c src/x3f_output_dng.c src/x3f_output_tiff.c src/x3f_output_ppm.c
   src/x3f_histogram.c src/x3f_print_meta.c src/x3f_dump.c src/x3f_matrix.c
-  src/x3f_dngtags.c src/x3f_denoise_utils.cpp src/x3f_denoise_aniso.cpp
-  src/x3f_denoise.cpp src/x3f_printf.c ${AUXC}
+  src/x3f_dngtags.c src/x3f_denoise.cpp src/x3f_printf.c ${AUXC}
 )
 
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE Iconv::Iconv)

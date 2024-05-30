@@ -41,7 +41,7 @@ def step_impl(context, image, converted_image):
 def step_impl(context, image, file_type):
     found_executable = get_dist_name()
     file_flag = ''.join(('-', file_type.lower()))  # being lazy here, letting file type match the switch
-    args = [found_executable, file_flag, "-no-denoise", "-color", "none", "-no-crop", image]
+    args = [found_executable, file_flag, "-color", "none", "-no-crop", image]
     run_conversion(args)
 
 
@@ -49,18 +49,18 @@ def step_impl(context, image, file_type):
 def step_impl(context, image, file_type):
     found_executable = get_dist_name()
     file_flag = ''.join(('-', file_type.lower()))  # being lazy here, letting file type match the switch
-    args = [found_executable, file_flag, "-no-denoise", "-color", "none", "-compress", "-no-crop", image]
+    args = [found_executable, file_flag, "-color", "none", "-compress", "-no-crop", image]
     run_conversion(args)
 
 
-@when(u'the {image} is denoised and converted by the code')
+@when(u'the {image} is converted by the code')
 def step_impl(context, image):
     found_executable = get_dist_name()
     args = [found_executable, '-dng', image]
     run_conversion(args)
 
 
-@when(u'the {image} is denoised and converted by the code to a cropped color TIFF')
+@when(u'the {image} is converted by the code to a cropped color TIFF')
 def step_impl(context, image):
     found_executable = get_dist_name()
     args = [found_executable, '-tiff', '-color', 'AdobeRGB', image]
@@ -84,7 +84,7 @@ def step_impl(context, image, output_format):
         args = ['-color', 'ProPhotoRGB']
     if output_format != 'CROP':
         args = args + ['-no-crop']
-    args = args + ['-tiff', '-no-denoise']
+    args = args + ['-tiff']
     args = [found_executable] + args + [image]
     run_conversion(args)
 
