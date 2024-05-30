@@ -36,7 +36,6 @@ void x3f_expand_quattro(x3f_area16_t *image,
             expanded->data, sizeof(uint16_t) * expanded->row_stride);
 
     assert(qt.size() == exp.size());
-
     // TODO: Does this still work?
     resize(img, exp, exp.size(), 0.0, 0.0, INTER_CUBIC);
     qt *= 4;

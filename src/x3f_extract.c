@@ -78,7 +78,6 @@ static void usage(char *progname)
             "   -sgain          Apply spatial gain (default except for Quattro)\n"
             "   -wb <WB>        Select white balance preset\n"
             "   -compress       Enable ZIP compression for DNG and TIFF output\n"
-            "   -ocl            Use OpenCL\n"
             "\n"
             "STRANGE STUFF\n"
             "   -offset <OFF>   Offset for SD14 and older\n"

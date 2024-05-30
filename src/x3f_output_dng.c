@@ -22,7 +22,6 @@
 #include <fcntl.h>
 #include <tiffio.h>
 #include <math.h>
-#include <string.h>
 #include <assert.h>
 
 static void vec_double_to_float(double *a, float *b, int len)
