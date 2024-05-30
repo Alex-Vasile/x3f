@@ -5,19 +5,14 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.4)
 Project (x3f)
 set(EXECUTABLE_NAME "x3f_extract")
 
-add_definitions(-DVERSION=\"0.57\")
+add_definitions(-DVERSION=\"0.58\")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(FRAMEWORKS_DIRECTOR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${EXECUTABLE_NAME}.app/Contents/Frameworks)
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIBRARY_DIRS})
-
-find_package(ZLIB REQUIRED)
-include_directories(${ZLIB_INCLUDE_DIRS})
-link_directories(${ZLIB_LIBRARY_DIRS})
 
 find_package(TIFF REQUIRED)
 include_directories(${TIFF_INCLUDE_DIRS})
@@ -37,52 +32,5 @@ ADD_EXECUTABLE(${EXECUTABLE_NAME}
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE Iconv::Iconv)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE opencv_core opencv_photo opencv_imgproc)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE TIFF::TIFF)
-target_link_libraries(${EXECUTABLE_NAME} PRIVATE z)
 
-# Deal with libraries
-if (CMAKE_SYSTEM_NAME MATCHES "Darwin")  # Bundle for macOS
-  set(CMAKE_MACOSX_RPATH ON)
-#  set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
-#  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-  set_target_properties(${EXECUTABLE_NAME} PROPERTIES
-    MACOSX_BUNDLE             TRUE
-    MACOSX_BUNDLE_INFO_PLIST  "${CMAKE_SOURCE_DIR}/Info.plist.in"
-  )
-
-  # Create the Frameworks directory
-  file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${EXECUTABLE_NAME}.app/Contents/Frameworks)
-
-  get_target_property(OPENCV_CORE_LOCATION_RELEASE    opencv_core    IMPORTED_LOCATION_RELEASE)
-  get_target_property(OPENCV_PHOTO_LOCATION_RELEASE   opencv_photo   IMPORTED_LOCATION_RELEASE)
-  get_target_property(OPENCV_IMGPROC_LOCATION_RELEASE opencv_imgproc IMPORTED_LOCATION_RELEASE)
-
-  execute_process(
-    COMMAND ${CMAKE_COMMAND} -E copy ${TIFF_LIBRARY}                    ${FRAMEWORKS_DIRECTOR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_CORE_LOCATION_RELEASE}    ${FRAMEWORKS_DIRECTOR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_PHOTO_LOCATION_RELEASE}   ${FRAMEWORKS_DIRECTOR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_IMGPROC_LOCATION_RELEASE} ${FRAMEWORKS_DIRECTOR}
-  )
-
-  # Specify the runtime path during linking
-  target_link_options(${EXECUTABLE_NAME} PRIVATE
-      "LINKER:-rpath,@executable_path/../Frameworks"
-      "LINKER:-rpath,@loader_path/../Frameworks"
-  )
-
-  execute_process(COMMAND chmod +w *)
-
-  # TODO: This is not working properly
-#  set_target_properties(${EXECUTABLE_NAME} PROPERTIES
-#      INSTALL_RPATH "@executable_path/../Frameworks"
-#  )
-#  set_target_properties(${EXECUTABLE_NAME} PROPERTIES
-#    INSTALL_NAME_DIR "@executable_path/../Frameworks"
-#  )
-#
-#  set(CMAKE_INSTALL_RPATH ${FRAMEWORKS_DIRECTOR})
-#  set(CMAKE_BUILD_RPATH ${FRAMEWORKS_DIRECTOR})
-
-else ()  # Static for everything else
-  set(CMAKE_EXE_LINKER_FLAGS "-static")
-endif ()
+#set(CMAKE_EXE_LINKER_FLAGS "-static")
