@@ -27,12 +27,6 @@ find_package(Iconv REQUIRED)
 include_directories(${ICONV_INCLUDE_DIRS})
 link_directories(${ICONV_LIBRARY_DIRS})
 
-find_package(TBB)
-IF (TBB_INCLUDE_DIRS)
-  include_directories(${TBB_INCLUDE_DIRS})
-  link_directories(${TBB_LIBRARY_DIRS})
-ENDIF (TBB_INCLUDE_DIRS)
-
 ADD_EXECUTABLE(${EXECUTABLE_NAME}
   src/x3f_extract.c src/x3f_version.c src/x3f_io.c src/x3f_process.c src/x3f_meta.c src/x3f_image.c
   src/x3f_spatial_gain.c src/x3f_output_dng.c src/x3f_output_tiff.c src/x3f_output_ppm.c
@@ -44,10 +38,6 @@ target_link_libraries(${EXECUTABLE_NAME} PRIVATE Iconv::Iconv)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE opencv_core opencv_photo opencv_imgproc)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE TIFF::TIFF)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE z)
-
-IF (TBB_INCLUDE_DIRS)
-  target_link_libraries(${EXECUTABLE_NAME} PRIVATE tbb)
-ENDIF (TBB_INCLUDE_DIRS)
 
 # Deal with libraries
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")  # Bundle for macOS
@@ -69,7 +59,6 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")  # Bundle for macOS
 
   execute_process(
     COMMAND ${CMAKE_COMMAND} -E copy ${TIFF_LIBRARY}                    ${FRAMEWORKS_DIRECTOR}
-    COMMAND ${CMAKE_COMMAND} -E copy "/usr/lib/libc++.1.dylib"          ${FRAMEWORKS_DIRECTOR}
     COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_CORE_LOCATION_RELEASE}    ${FRAMEWORKS_DIRECTOR}
     COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_PHOTO_LOCATION_RELEASE}   ${FRAMEWORKS_DIRECTOR}
     COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_IMGPROC_LOCATION_RELEASE} ${FRAMEWORKS_DIRECTOR}
